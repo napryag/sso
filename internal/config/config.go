@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -20,18 +21,19 @@ type GRPCConfig struct {
 }
 
 func MustLoad() *Config {
-	path := os.Getenv("CONFIG_PATH")
-	if path == "" {
+	_ = godotenv.Load()
+	configPath := os.Getenv("CONFIG_PATH")
+	if configPath == "" {
 		panic("config path is empty")
 	}
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		panic("config file doesn`t exist:" + path)
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		panic("config file doesn`t exist:" + configPath)
 	}
 
 	var cfg Config
 
-	if err := cleanenv.ReadConfig(path, &cfg); err != nil {
+	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
 		panic("failed to read config" + err.Error())
 	}
 
