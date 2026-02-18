@@ -3,7 +3,10 @@ package main
 import (
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 
+	"github.com/napryag/sso/internal/app"
 	"github.com/napryag/sso/internal/config"
 	"github.com/napryag/sso/internal/lib/logger/handlers/slogpretty"
 )
@@ -19,6 +22,20 @@ func main() {
 	log := setupLogger(cfg.Env)
 
 	log.Info("starting app", slog.Any("cfg", cfg))
+
+	appliacation := app.New(log, cfg.GRPC.Port, cfg.StoragePath, cfg.TokenTTL)
+
+	go appliacation.GRPCSrv.MustRun()
+
+	stop := make(chan os.Signal, 1)
+
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+
+	sig := <-stop
+	log.Info("stopping application", slog.String("signal", os.Signal.String(sig)))
+
+	appliacation.GRPCSrv.Stop()
+	log.Info("application stopped")
 
 }
 
