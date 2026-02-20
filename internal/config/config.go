@@ -1,6 +1,7 @@
 package config
 
 import (
+	"flag"
 	"os"
 	"time"
 
@@ -21,8 +22,7 @@ type GRPCConfig struct {
 }
 
 func MustLoad() *Config {
-	_ = godotenv.Load()
-	configPath := os.Getenv("CONFIG_PATH")
+	configPath := fetchConfigPath()
 	if configPath == "" {
 		panic("config path is empty")
 	}
@@ -32,14 +32,28 @@ func MustLoad() *Config {
 
 func MustLoadByPath(configPath string) *Config {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		panic("config file doesn`t exist:" + configPath)
+		panic("config file does not exist: " + configPath)
 	}
 
 	var cfg Config
 
 	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
-		panic("failed to read config" + err.Error())
+		panic("cannot read config: " + err.Error())
 	}
 
 	return &cfg
+}
+
+func fetchConfigPath() string {
+	var res string
+
+	flag.StringVar(&res, "config", "", "path to config file")
+	flag.Parse()
+
+	if res == "" {
+		_ = godotenv.Load()
+		res = os.Getenv("CONFIG_PATH")
+	}
+
+	return res
 }
